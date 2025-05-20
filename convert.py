@@ -7,6 +7,7 @@
 import logging
 import re
 import sys
+import os.path
 
 import opencc
 from pypinyin import lazy_pinyin
@@ -58,12 +59,30 @@ def make_output(word, pinyin):
     return '\t'.join([word, pinyin, '0'])
 
 
+def load_excluded_titles(filename="exclude_titles.txt"):
+    excluded_titles = set()
+    if os.path.exists(filename):
+        with open(filename, "r", encoding="utf-8") as f:
+            for line in f:
+                excluded_titles.add(line.strip())
+        logging.info(f'Loaded {len(excluded_titles)} excluded titles from {filename}')
+    else:
+        logging.info(f'No excluded titles file found at {filename}, continuing without exclusions')
+    return excluded_titles
+
+
 def main():
     previous_title = None
     result_count = 0
+
+    excluded_titles = load_excluded_titles()
+
     with open(sys.argv[1]) as f:
         for line in f:
             title = _TO_SIMPLIFIED_CHINESE.convert(line.strip())
+            if title in excluded_titles:
+                logging.debug(f'Excluded title: {title}')
+                continue
             if is_good_title(title, previous_title):
                 pinyin = [_PINYIN_FIXES.get(item, item) for item in lazy_pinyin(title)]
                 pinyin = _PINYIN_SEPARATOR.join(pinyin)

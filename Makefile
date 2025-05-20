@@ -3,6 +3,7 @@ WEB_SLANG_VERSION=20250415
 FILENAME=zhwiki-$(VERSION)-all-titles-in-ns0
 WEB_SLANG_FILE=web-slang-$(WEB_SLANG_VERSION).txt
 WEB_SLANG_SOURCE=web-slang-$(WEB_SLANG_VERSION).source
+EXCLUDE_TITLES_FILE=exclude_titles.txt
 
 all: build
 
@@ -19,6 +20,9 @@ $(WEB_SLANG_SOURCE):
 $(WEB_SLANG_FILE): $(WEB_SLANG_SOURCE)
 	./zhwiki-web-slang.py --process $(WEB_SLANG_SOURCE) > $(WEB_SLANG_FILE)
 
+$(EXCLUDE_TITLES_FILE):
+	./exclude_titles.py || true
+
 $(FILENAME): $(FILENAME).gz
 	gzip -k -d $(FILENAME).gz
 
@@ -26,6 +30,7 @@ zhwiki.source: $(FILENAME) $(WEB_SLANG_FILE)
 	cat $(FILENAME) $(WEB_SLANG_FILE) > zhwiki.source
 
 zhwiki.raw: zhwiki.source
+	-make $(EXCLUDE_TITLES_FILE)
 	./convert.py zhwiki.source > zhwiki.raw.tmp
 	sort -u zhwiki.raw.tmp > zhwiki.raw
 
@@ -46,4 +51,4 @@ install_rime_dict: zhwiki.dict.yaml
 	install -Dm644 zhwiki.dict.yaml -t $(DESTDIR)/usr/share/rime-data/
 
 clean:
-	rm -f $(FILENAME).gz $(WEB_SLANG_SOURCE) $(WEB_SLANG_FILE) $(FILENAME) zhwiki.source zhwiki.raw zhwiki.raw.tmp zhwiki.dict zhwiki.dict.yaml zhwiki.rime.raw
+	rm -f $(FILENAME).gz $(WEB_SLANG_SOURCE) $(WEB_SLANG_FILE) $(FILENAME) zhwiki.source zhwiki.raw zhwiki.raw.tmp zhwiki.dict zhwiki.dict.yaml zhwiki.rime.raw $(EXCLUDE_TITLES_FILE)
